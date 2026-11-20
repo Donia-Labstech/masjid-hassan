@@ -34,7 +34,7 @@ function loadScript(src) { return new Promise((res, rej) => { const s = document
 
 /* ---------- التخزين المحلي ---------- */
 const idb = { db: null,
-  open() { return new Promise((res, rej) => { const r = indexedDB.open('masjid', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(this.db = r.result); r.onerror = () => rej(r.error); }); },
+  open() { return new Promise((res, rej) => { const r = indexedDB.open(window.QS_DEMO ? 'masjid-demo' : 'masjid', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(this.db = r.result); r.onerror = () => rej(r.error); }); },
   get(k) { return new Promise((res, rej) => { const r = this.db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
   set(k, v) { return new Promise((res, rej) => { const t = this.db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); } };
 let EV = [], EVM = new Map(), META = { dev: uid(), seq: 0, unsent: [], gs: '', key: '', me: '' }, saveT;
@@ -87,7 +87,7 @@ function syncBadge(state) {
 }
 function queueSync(ms) { clearTimeout(syncT); syncT = setTimeout(sync, ms || 0); }
 async function sync() {
-  if (!META.gs || !META.key || syncing) return; syncing = true;
+  if (window.QS_DEMO || !META.gs || !META.key || syncing) return; syncing = true;
   try {
     while (META.unsent.length) {
       const ids = META.unsent.slice(0, 150), evs = ids.map(i => EVM.get(i)).filter(Boolean);

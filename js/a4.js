@@ -127,6 +127,7 @@ async function boot() {
   if ('serviceWorker' in navigator && location.protocol == 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
   try { await idb.open(); const [ev, me] = await Promise.all([idb.get('events'), idb.get('meta')]); if (Array.isArray(ev)) EV = ev; if (me) META = Object.assign(META, me); } catch (e) {}
   EVM = new Map(EV.map(e => [e.id, e])); rebuild();
+  if (window.QS_DEMO) await seedDemo();
   if (META.me && !S.users[META.me]) META.me = '';
   go(location.hash.slice(1) || (META.me ? 'dash' : 'home'));
   if (META.gs) sync();

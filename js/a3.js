@@ -32,7 +32,7 @@ home() {
   </div>${footer()}`;
 },
 join() {
-  const url = CFG.gs || META.gs, wa = waNum(CFG.wa || '');
+  const url = window.QS_DEMO ? '' : CFG.gs || META.gs, wa = waNum(CFG.wa || '');
   main.innerHTML = back() + head('حجز مقعد في حلقات القرآن', 'املأ النموذج، وتتصل بك إدارة ' + esc(THE()) + ' لتأكيد التسجيل') +
   `<form class="panel form" id="jf">
    <label>الاسم<input id="j-name" required maxlength="60"></label><label>اللقب<input id="j-surname" required maxlength="60"></label>

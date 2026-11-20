@@ -69,6 +69,9 @@ p{margin:0}
 .pubnav::-webkit-scrollbar{display:none}
 .pubnav button{font:inherit;font-size:14px;color:#FFF3D6;background:#ffffff14;border:1px solid #ffffff30;border-radius:99px;padding:5px 14px;cursor:pointer;white-space:nowrap}
 .pubnav button[aria-current=true]{background:var(--gold2);color:#2B2105;border-color:var(--gold2)}
+.pubnav a{font-size:14px;color:#2B2105;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:99px;padding:5px 14px;white-space:nowrap;text-decoration:none}
+.demobar{background:#F2A65A;color:#2B2105;text-align:center;font-size:13.5px;padding:6px 12px}
+.demobar a{color:#0E3B2E;font-weight:600;margin-inline-start:8px}
 .back{margin-bottom:-6px}
 .sync{font-size:12px;padding:2px 10px;border-radius:99px;border:1px solid #fff4;white-space:nowrap}
 .sync.on{background:#22865A55} .sync.off{background:#B5402F66}
@@ -238,8 +241,9 @@ video.cam{width:min(100%,380px);border-radius:14px;border:2px solid var(--gold)}
   <button class="btn sm gold" id="inst" hidden>ثبّت التطبيق</button>
 </div>
   <div class="pubnav" id="pubnav" role="navigation" hidden aria-label="القائمة">
-    <button data-v="home">🏠 الرئيسية</button><button data-v="join">📝 احجز مقعدًا</button><button data-v="blog">🌿 المدونة</button><button data-v="login">🔑 دخول الطاقم</button>
-  </div></header>
+    <button data-v="home">🏠 الرئيسية</button><button data-v="join">📝 احجز مقعدًا</button><button data-v="blog">🌿 المدونة</button><button data-v="login">🔑 دخول الطاقم</button><a href="?demo=1#dash">🎬 جولة تجريبية</a>
+  </div>
+  <div class="demobar" id="demobar" hidden>🎬 نسخة تجريبية ببيانات وهمية للتعرّف على المنصة، لا تُحفظ في بيانات المسجد. رمز المدير 000000 · رمز المعلم 111111 <a href="./">خروج من التجربة</a></div></header>
 <div class="shell" id="shell">
   <nav id="nav" hidden></nav>
   <main id="main"></main>
@@ -247,12 +251,14 @@ video.cam{width:min(100%,380px);border-radius:14px;border:2px solid var(--gold)}
 <dialog id="dlg"></dialog>
 <div id="toast" hidden></div>
 <div id="print"></div>
+<script>window.QS_DEMO = /[?&]demo\b/.test(location.search);</script>
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/lib/bundles/adhan.umd.min.js"></script>
 <script src="js/a1.js"></script>
 <script src="js/a2.js"></script>
 <script src="js/a3.js"></script>
+<script src="js/demo.js"></script>
 <script src="js/a4.js"></script>
 </body>
 </html>
