@@ -5,13 +5,13 @@ const NAV = {
   admin: [['dash', '🏠', 'الرئيسية', 'var(--emerald)'], ['students', '🎓', 'الطلاب', 'var(--teal)'], ['reqs', '📨', 'طلبات التسجيل', 'var(--blue)'], ['attend', '📋', 'الحضور', 'var(--blue)'], ['fajr', '🌙', 'رجال الفجر', 'var(--purple)'], ['recite', '📖', 'متابعة الحفظ', 'var(--gold)'], ['groups', '👥', 'الأفواج والمعلمون', 'var(--purple)'], ['cards', '🪪', 'البطاقات', 'var(--blue)'], ['blog', '🌿', 'المدونة', 'var(--teal)'], ['ai', '💡', 'المساعد', 'var(--purple)'], ['settings', '⚙️', 'الإعدادات', 'var(--muted)']],
   teacher: [['dash', '🏠', 'أفواجي', 'var(--emerald)'], ['attend', '📋', 'الحضور', 'var(--blue)'], ['fajr', '🌙', 'رجال الفجر', 'var(--purple)'], ['recite', '📖', 'متابعة الحفظ', 'var(--gold)'], ['students', '🎓', 'طلابي', 'var(--teal)'], ['cards', '🪪', 'البطاقات', 'var(--blue)'], ['blog', '🌿', 'المدونة', 'var(--teal)'], ['ai', '💡', 'المساعد', 'var(--purple)'], ['settings', '⚙️', 'حسابي', 'var(--muted)']]
 };
-const footer = () => `<div class="waqf"><b>وقف لله تعالى</b><p>${WAQF}</p></div><div class="foot">${esc(MOSQUE())} · ${esc(CFG.place || '')}<span class="credit">تطوير donialabstech</span></div>`;
+const footer = () => `<div class="waqf"><b>وقف لله تعالى</b><p>${WAQF}</p></div><div class="foot">${esc(MOSQUE())} · ${esc(CFG.place || '')}${CFG.supervisor ? ' · المشرف: ' + esc(CFG.supervisor.name) : ''}<span class="credit">تطوير donialabstech</span></div>`;
 function go(v) {
   stopCam(); dirty = false;
   const pub = !META.me || !ME();
   $('#nav').hidden = pub; $('#shell').classList.toggle('pub', pub);
   $('#pubnav').hidden = !pub || v == 'scr'; $('#pubnav').querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.v == v));
-  if (pub) { if (!['home', 'join', 'blog', 'login', 'setup', 'pair', 'parent', 'feedback'].includes(v)) v = 'home'; }
+  if (pub) { if (!['home', 'join', 'blog', 'login', 'setup', 'pair', 'parent', 'feedback', 'guide'].includes(v)) v = 'home'; }
   else { const N = NAV[ME().role] || NAV.teacher; if (!N.some(n => n[0] == v) && v != 'scr') v = 'dash';
     $('#nav').innerHTML = N.map(n => `<button data-v="${n[0]}" style="--c:${n[3]}" aria-current="${n[0] == v}"><i>${n[1]}</i>${n[2]}${n[0] == 'reqs' && pendingReqs() ? ` <span class="pill bad">${pendingReqs()}</span>` : ''}</button>`).join('') + `<div class="who">${esc(ME().name)} · ${ME().role == 'admin' ? 'المدير' : 'معلم'}</div>`; }
   VIEW = v; V[v](); try { history.replaceState(null, '', '#' + v); } catch (e) {} window.scrollTo(0, 0); syncBadge(navigator.onLine ? 'on' : 'off');
