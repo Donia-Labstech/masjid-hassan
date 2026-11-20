@@ -11,5 +11,5 @@ window.QS_CONFIG = {
   commune: { name: 'المعاضيد', lat: 35.771089, lng: 4.750766 }, // لحساب وقت الفجر
   supervisor: { name: 'الشيخ سليم بوسعدية', phone: '0777664030' }, // المشرف: يظهر للأولياء والزوار
   wa: '0777664030',                        // واتساب استقبال طلبات الحجز ورسائل «رأيكم يهمنا»
-  gs: ''                                   // رابط سكربت Google (Web app) بعد نشره
+  gs: 'https://script.google.com/macros/s/AKfycbyboen5DbLnevC7gyO-KgP9TTd_tDuV6v3qFpyjc6VURMBqRts0zcAeJNsW5SiVZn-n/exec'                                   // رابط سكربت Google (Web app) بعد نشره
 };
