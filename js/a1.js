@@ -118,7 +118,13 @@ async function emit(type, d) {
 
 /* ---------- المزامنة مع جدول Google ---------- */
 let syncing = false, syncT, lastSync = 0, dirty = false;
-async function api(url, o) { const r = await fetch(url, { method: 'POST', body: JSON.stringify(o) }); return r.json(); }
+/* سكربت Google يفشل أحيانًا في أول طلب بعد سكون («التشغيل البارد»)، فنعيد المحاولة مرتين */
+async function api(url, o) {
+  for (let i = 0; ; i++) {
+    try { const r = await fetch(url, { method: 'POST', body: JSON.stringify(o) }); return await r.json(); }
+    catch (e) { if (i >= 2) throw e; await new Promise(r => setTimeout(r, 1500 * (i + 1))); }
+  }
+}
 function syncBadge(state) {
   const b = $('#sync'); if (!META.me) { b.hidden = true; return; }
   b.hidden = false;
