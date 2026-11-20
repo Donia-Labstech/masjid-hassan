@@ -10,11 +10,13 @@ function go(v) {
   stopCam(); dirty = false;
   const pub = !META.me || !ME();
   $('#nav').hidden = pub; $('#shell').classList.toggle('pub', pub);
+  $('#pubnav').hidden = !pub || v == 'scr'; $('#pubnav').querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.v == v));
   if (pub) { if (!['home', 'join', 'blog', 'login', 'setup', 'pair'].includes(v)) v = 'home'; }
   else { const N = NAV[ME().role] || NAV.teacher; if (!N.some(n => n[0] == v) && v != 'scr') v = 'dash';
     $('#nav').innerHTML = N.map(n => `<button data-v="${n[0]}" style="--c:${n[3]}" aria-current="${n[0] == v}"><i>${n[1]}</i>${n[2]}${n[0] == 'reqs' && pendingReqs() ? ` <span class="pill bad">${pendingReqs()}</span>` : ''}</button>`).join('') + `<div class="who">${esc(ME().name)} · ${ME().role == 'admin' ? 'المدير' : 'معلم'}</div>`; }
   VIEW = v; V[v](); try { history.replaceState(null, '', '#' + v); } catch (e) {} window.scrollTo(0, 0); syncBadge(navigator.onLine ? 'on' : 'off');
 }
+const back = () => META.me && ME() ? '' : '<div class="back"><button class="btn ghost sm" data-v="home">→ رجوع إلى الرئيسية</button></div>';
 const pendingReqs = () => Object.values(S.reqs).filter(r => r.st == 'new').length;
 
 const V = {
@@ -30,33 +32,40 @@ home() {
   </div>${footer()}`;
 },
 join() {
-  const url = CFG.gs || META.gs;
-  main.innerHTML = head('حجز مقعد في حلقات القرآن', 'املأ النموذج، وتتصل بك إدارة ' + esc(THE()) + ' لتأكيد التسجيل') +
-  (url ? `<form class="panel form" id="jf">
+  const url = CFG.gs || META.gs, wa = waNum(CFG.wa || '');
+  main.innerHTML = back() + head('حجز مقعد في حلقات القرآن', 'املأ النموذج، وتتصل بك إدارة ' + esc(THE()) + ' لتأكيد التسجيل') +
+  `<form class="panel form" id="jf">
    <label>الاسم<input id="j-name" required maxlength="60"></label><label>اللقب<input id="j-surname" required maxlength="60"></label>
    <label>تاريخ الميلاد<input id="j-birth" type="date"></label><label>اسم الأب<input id="j-father" maxlength="60"></label>
    <label>رقم الهاتف<input id="j-phone" required inputmode="tel" dir="ltr" maxlength="20"></label><label>الولي<input id="j-guardian" maxlength="60"></label>
    <label>البريد الإلكتروني (اختياري)<input id="j-email" type="email" dir="ltr" maxlength="80"></label><label>ملاحظة (اختياري)<input id="j-note" maxlength="80"></label>
-   <div class="wide tools"><button class="btn gold big" type="submit">أرسل الطلب</button></div></form>` : `<div class="panel">التسجيل عبر الإنترنت غير مفعّل بعد. تفضّلوا بزيارة ${esc(THE())} للتسجيل.</div>`) + footer();
-  if ($('#jf')) $('#jf').onsubmit = async e => {
-    e.preventDefault(); const b = e.submitter; b.disabled = true; b.textContent = 'جارٍ الإرسال…';
+   <div class="wide tools"><button class="btn gold big" type="submit">${url ? 'أرسل الطلب' : 'أرسل الطلب عبر واتساب'}</button></div></form>` + footer();
+  $('#jf').onsubmit = async e => {
+    e.preventDefault(); const b = e.submitter;
     const data = {}; ['name', 'surname', 'birth', 'father', 'phone', 'guardian', 'email', 'note'].forEach(k => data[k] = $('#j-' + k).value.trim());
-    try { const j = await api(url, { action: 'request', data }); if (!j.ok) throw 0; main.innerHTML = `<div class="panel" style="text-align:center"><div class="cupwin">🌿</div><h2>وصل طلبكم، بارك الله فيكم</h2><p>تتصل بكم الإدارة على الرقم <span dir="ltr">${esc(data.phone)}</span>.</p></div>` + footer(); }
+    const done = how => { main.innerHTML = back() + `<div class="panel" style="text-align:center"><div class="cupwin">🌿</div><h2>${how}، بارك الله فيكم</h2><p>تتصل بكم الإدارة على الرقم <span dir="ltr">${esc(data.phone)}</span>.</p></div>` + footer(); };
+    if (!url) {
+      const L = [['الاسم', data.name], ['اللقب', data.surname], ['تاريخ الميلاد', data.birth], ['اسم الأب', data.father], ['الهاتف', data.phone], ['الولي', data.guardian], ['البريد', data.email], ['ملاحظة', data.note]].filter(x => x[1]).map(x => x[0] + ': ' + x[1]);
+      const text = encodeURIComponent('السلام عليكم. طلب حجز مقعد في حلقات القرآن · ' + MOSQUE() + '\n' + L.join('\n'));
+      window.open('https://wa.me/' + (wa || '') + '?text=' + text, '_blank', 'noopener'); return done('جُهّز طلبكم في واتساب');
+    }
+    b.disabled = true; b.textContent = 'جارٍ الإرسال…';
+    try { const j = await api(url, { action: 'request', data }); if (!j.ok) throw 0; done('وصل طلبكم'); }
     catch (x) { b.disabled = false; b.textContent = 'أرسل الطلب'; toast('تعذر الإرسال. تحقق من الاتصال وأعد المحاولة'); }
   };
 },
-blog() { main.innerHTML = head('المدونة', 'في المحافظة على الصلاة، والأخلاق، والتلاحم') + (isAdmin() ? '<div><button class="btn" data-a="newPost">مقال جديد</button></div>' : '') + `<div class="panel">${postsHTML()}</div><p class="mut" style="font-size:12.5px">النصوص مكتوبة ومراجَعة يدويًا، ولا يكتبها الذكاء الاصطناعي. يُستحسن أن يراجع إمام ${esc(THE())} كل مقال قبل نشره.</p>` + (META.me ? '' : footer()); },
+blog() { main.innerHTML = back() + head('المدونة', 'في المحافظة على الصلاة، والأخلاق، والتلاحم') + (isAdmin() ? '<div><button class="btn" data-a="newPost">مقال جديد</button></div>' : '') + `<div class="panel">${postsHTML()}</div><p class="mut" style="font-size:12.5px">النصوص مكتوبة ومراجَعة يدويًا، ولا يكتبها الذكاء الاصطناعي. يُستحسن أن يراجع إمام ${esc(THE())} كل مقال قبل نشره.</p>` + (META.me ? '' : footer()); },
 login() {
   const us = Object.values(S.users).filter(u => !u.off);
   if (!us.length) return V.setup();
-  main.innerHTML = `<form class="panel dl lock" id="lf"><h2>دخول الطاقم</h2><label class="form"><span class="mut">الاسم</span><select id="l-u">${us.map(u => `<option value="${u.uid}">${esc(u.name)} · ${u.role == 'admin' ? 'المدير' : 'معلم'}</option>`).join('')}</select></label>
+  main.innerHTML = back() + `<form class="panel dl lock" id="lf"><h2>دخول الطاقم</h2><label class="form"><span class="mut">الاسم</span><select id="l-u">${us.map(u => `<option value="${u.uid}">${esc(u.name)} · ${u.role == 'admin' ? 'المدير' : 'معلم'}</option>`).join('')}</select></label>
   <label class="form"><span class="mut">الرمز السري</span><input id="l-p" type="password" inputmode="numeric" autocomplete="current-password" required></label>
   <div class="tools"><button class="btn" type="submit">دخول</button><button class="btn ghost" type="button" data-v="pair">ربط هذا الجهاز بقاعدة المسجد</button></div></form>`;
   $('#lf').onsubmit = async e => { e.preventDefault(); const u = S.users[$('#l-u').value]; const h = await hashPin($('#l-p').value, u.uid);
     if (h !== u.pin) return toast('الرمز غير صحيح'); META.me = u.uid; persist(); toast('السلام عليكم ' + u.name); go('dash'); queueSync(); };
 },
 setup() {
-  main.innerHTML = `<div class="panel dl lock"><h2>تهيئة المنصة</h2><p class="mut">لا يوجد حساب على هذا الجهاز بعد.</p>
+  main.innerHTML = back() + `<div class="panel dl lock"><h2>تهيئة المنصة</h2><p class="mut">لا يوجد حساب على هذا الجهاز بعد.</p>
   <form class="dl" id="sf"><h3>إنشاء حساب المدير</h3><label class="form"><span class="mut">الاسم</span><input id="s-n" required></label>
   <label class="form"><span class="mut">رمز سري (6 أرقام على الأقل)</span><input id="s-p" type="password" inputmode="numeric" minlength="6" required autocomplete="new-password"></label>
   <label class="form"><span class="mut">أعده للتأكيد</span><input id="s-p2" type="password" inputmode="numeric" minlength="6" required autocomplete="new-password"></label>
