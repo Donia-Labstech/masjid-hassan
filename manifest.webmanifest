@@ -1,0 +1,16 @@
+{
+  "name": "منصة المسجد · وقف لله تعالى",
+  "short_name": "منصة المسجد",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "dir": "rtl",
+  "lang": "ar",
+  "theme_color": "#0E3B2E",
+  "background_color": "#0E3B2E",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"},
+    {"src": "logo.webp", "sizes": "320x320", "type": "image/webp", "purpose": "any"}
+  ]
+}
