@@ -65,16 +65,16 @@ const A = {
   editT(el) {
     const id = el.dataset.u, u = S.users[id] || {};
     dlg.innerHTML = `<form class="dl" id="tf"><h2>${id ? 'تعديل المعلم' : 'معلم جديد'}</h2><div class="form"><label>الاسم<input id="t-name" value="${esc(u.name)}" required></label><label>الهاتف<input id="t-phone" value="${esc(u.phone)}" dir="ltr"></label>
-    <label>${id ? 'رمز سري جديد (اتركه فارغًا للإبقاء)' : 'الرمز السري (6 أرقام على الأقل)'}<input id="t-pin" type="password" inputmode="numeric" ${id ? '' : 'required minlength="6"'} autocomplete="new-password"></label>
+    <label>${id ? 'رمز سري جديد (اتركه فارغًا للإبقاء)' : 'الرمز السري (6 أحرف أو أرقام على الأقل)'}<input id="t-pin" type="password" ${id ? '' : 'required minlength="6"'} autocomplete="new-password"></label>
     ${id ? `<label>الحالة<select id="t-off"><option value="">نشط</option><option value="1"${u.off ? ' selected' : ''}>موقوف</option></select></label>` : ''}</div>
     <p class="mut" style="font-size:13px">بعد الحفظ أسند إليه الأفواج من بطاقة كل فوج.</p><div class="tools"><button class="btn" type="submit">حفظ</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></div></form>`;
     dlg.showModal();
     $('#tf').onsubmit = async e => { e.preventDefault(); const nid = id || uid(), d = { uid: nid, name: $('#t-name').value.trim(), phone: $('#t-phone').value.trim(), role: u.role || 'teacher' };
-      const p = $('#t-pin').value; if (p) { if (p.length < 6) return toast('الرمز 6 أرقام على الأقل'); d.pin = await hashPin(p, nid); }
+      const p = $('#t-pin').value; if (p) { if (p.length < 6) return toast('الرمز 6 أحرف أو أرقام على الأقل'); d.pin = await hashPin(p, nid); }
       if ($('#t-off')) d.off = !!$('#t-off').value; await emit('user', d); dlg.close(); toast('حُفظ'); V.groups(); };
   },
   myPin() {
-    dlg.innerHTML = `<form class="dl" id="mp"><h2>تغيير رمزي السري</h2><input id="mp-1" type="password" inputmode="numeric" minlength="6" required placeholder="الرمز الجديد" autocomplete="new-password"><input id="mp-2" type="password" inputmode="numeric" minlength="6" required placeholder="أعده للتأكيد" autocomplete="new-password"><div class="tools"><button class="btn" type="submit">حفظ</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></div></form>`;
+    dlg.innerHTML = `<form class="dl" id="mp"><h2>تغيير رمزي السري</h2><input id="mp-1" type="password" minlength="6" required placeholder="الرمز الجديد" autocomplete="new-password"><input id="mp-2" type="password" minlength="6" required placeholder="أعده للتأكيد" autocomplete="new-password"><div class="tools"><button class="btn" type="submit">حفظ</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></div></form>`;
     dlg.showModal(); $('#mp').onsubmit = async e => { e.preventDefault(); if ($('#mp-1').value != $('#mp-2').value) return toast('الرمزان غير متطابقين'); await emit('user', { uid: META.me, pin: await hashPin($('#mp-1').value, META.me) }); dlg.close(); toast('تغيّر الرمز'); };
   },
   logout(el) { if (!sure(el)) return; META.me = ''; persist(); go('home'); },

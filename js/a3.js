@@ -59,7 +59,7 @@ login() {
   const us = Object.values(S.users).filter(u => !u.off);
   if (!us.length) return V.setup();
   main.innerHTML = back() + `<form class="panel dl lock" id="lf"><h2>دخول الطاقم</h2><label class="form"><span class="mut">الاسم</span><select id="l-u">${us.map(u => `<option value="${u.uid}">${esc(u.name)} · ${u.role == 'admin' ? 'المدير' : 'معلم'}</option>`).join('')}</select></label>
-  <label class="form"><span class="mut">الرمز السري</span><input id="l-p" type="password" inputmode="numeric" autocomplete="current-password" required></label>
+  <label class="form"><span class="mut">كلمة السر</span><input id="l-p" type="password" autocomplete="current-password" required></label>
   <div class="tools"><button class="btn" type="submit">دخول</button><button class="btn ghost" type="button" data-v="pair">ربط هذا الجهاز بقاعدة المسجد</button></div></form>`;
   $('#lf').onsubmit = async e => { e.preventDefault(); const u = S.users[$('#l-u').value]; const h = await hashPin($('#l-p').value, u.uid);
     if (h !== u.pin) return toast('الرمز غير صحيح'); META.me = u.uid; persist(); toast('السلام عليكم ' + u.name); go('dash'); queueSync(); };
@@ -67,8 +67,8 @@ login() {
 setup() {
   main.innerHTML = back() + `<div class="panel dl lock"><h2>تهيئة المنصة</h2><p class="mut">لا يوجد حساب على هذا الجهاز بعد.</p>
   <form class="dl" id="sf"><h3>إنشاء حساب المدير</h3><label class="form"><span class="mut">الاسم</span><input id="s-n" required></label>
-  <label class="form"><span class="mut">رمز سري (6 أرقام على الأقل)</span><input id="s-p" type="password" inputmode="numeric" minlength="6" required autocomplete="new-password"></label>
-  <label class="form"><span class="mut">أعده للتأكيد</span><input id="s-p2" type="password" inputmode="numeric" minlength="6" required autocomplete="new-password"></label>
+  <label class="form"><span class="mut">رمز سري (6 أحرف أو أرقام على الأقل)</span><input id="s-p" type="password" minlength="6" required autocomplete="new-password"></label>
+  <label class="form"><span class="mut">أعده للتأكيد</span><input id="s-p2" type="password" minlength="6" required autocomplete="new-password"></label>
   <button class="btn" type="submit">أنشئ الحساب</button></form><hr style="border:0;border-top:1px solid var(--line);width:100%"><button class="btn ghost" data-v="pair">هذا جهاز إضافي: اربطه بقاعدة المسجد</button></div>`;
   $('#sf').onsubmit = async e => { e.preventDefault(); if ($('#s-p').value !== $('#s-p2').value) return toast('الرمزان غير متطابقين');
     const id = uid(); META.me = id; await emit('user', { uid: id, name: $('#s-n').value.trim(), role: 'admin', pin: await hashPin($('#s-p').value, id) });
