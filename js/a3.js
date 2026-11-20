@@ -8,7 +8,7 @@ const NAV = {
 const footer = () => `<div class="waqf"><b>وقف لله تعالى</b><p>${WAQF}</p></div><div class="foot">${esc(MOSQUE())} · ${esc(CFG.place || '')}${CFG.supervisor ? ' · المشرف: ' + esc(CFG.supervisor.name) : ''}<span class="credit">تطوير donialabstech</span></div>`;
 function go(v) {
   stopCam(); dirty = false;
-  const pub = !META.me || !ME();
+  const pub = !META.me || !ME() || v == 'join' || v == 'parent'; // الحجز وبوابة الأولياء تُفتح من الملصق حتى على جهاز الطاقم
   $('#nav').hidden = pub; $('#shell').classList.toggle('pub', pub);
   $('#pubnav').hidden = !pub || v == 'scr'; $('#pubnav').querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.v == v));
   if (pub) { if (!['home', 'join', 'blog', 'login', 'setup', 'pair', 'parent', 'feedback', 'guide'].includes(v)) v = 'home'; }
@@ -16,7 +16,7 @@ function go(v) {
     $('#nav').innerHTML = N.map(n => `<button data-v="${n[0]}" style="--c:${n[3]}" aria-current="${n[0] == v}"><i>${n[1]}</i>${n[2]}${n[0] == 'reqs' && pendingReqs() ? ` <span class="pill bad">${pendingReqs()}</span>` : ''}</button>`).join('') + `<div class="who">${esc(ME().name)} · ${ME().role == 'admin' ? 'المدير' : 'معلم'}</div>`; }
   VIEW = v; V[v](); try { history.replaceState(null, '', '#' + v); } catch (e) {} window.scrollTo(0, 0); syncBadge(navigator.onLine ? 'on' : 'off');
 }
-const back = () => META.me && ME() ? '' : '<div class="back"><button class="btn ghost sm" data-v="home">→ رجوع إلى الرئيسية</button></div>';
+const back = () => META.me && ME() ? (['join', 'parent'].includes(VIEW) ? '<div class="back"><button class="btn ghost sm" data-v="dash">→ رجوع إلى لوحة الإدارة</button></div>' : '') : '<div class="back"><button class="btn ghost sm" data-v="home">→ رجوع إلى الرئيسية</button></div>';
 const pendingReqs = () => Object.values(S.reqs).filter(r => r.st == 'new').length;
 
 const V = {
