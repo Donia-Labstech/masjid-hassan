@@ -243,3 +243,23 @@ GUIDE.push(
   <p class="mut">هاتف الولي وتاريخ الميلاد واسم الأب والولي والبريد ورمز الولي والصورة تُحفظ وتُرسل مشفّرة، فلا تُقرأ في جدول Google ولا في ملفات الجهاز. المفتاح عند أجهزة الطاقم المربوطة وحدها.</p>
   ${lk ? `<p class="warnbox">${lk} طالبًا بياناتهم مشفّرة بمفتاح ليس على هذا الجهاز. اربطه برمز الربط الصحيح من جهاز المدير.</p>` : ''}`;
   const b = [...main.querySelectorAll('.panel h3')].find(h => h.textContent.includes('نسخة احتياطية')); b ? b.parentElement.before(p) : main.append(p); }; }
+
+/* ---------- قفل الإعدادات التقنية (ربط جدول Google واسترجاع النسخ) برمز تقني ---------- */
+{ const _s2 = V.settings; V.settings = function () { _s2(); if (!isAdmin()) return;
+  const gp = [...main.querySelectorAll('.panel h3')].find(h => h.textContent.includes('قاعدة بيانات المسجد'));
+  const imp = $('#imp'); const restore = imp && imp.closest('label');
+  if (!gp) return; const panel = gp.parentElement;
+  if (!S.cfg.tech) { const t = document.createElement('div'); t.className = 'tools'; t.style.marginTop = '10px'; t.innerHTML = '<button class="btn ghost sm" data-a="techSet">🔒 اقفل هذا القسم برمز تقني</button>'; panel.append(t); return; }
+  if (V.settings.open) { const t = document.createElement('div'); t.className = 'tools'; t.style.marginTop = '10px'; t.innerHTML = '<span class="pill ok">مفتوح بالرمز التقني</span><button class="btn ghost sm" data-a="techLock">أعد القفل</button>'; panel.append(t); return; }
+  panel.innerHTML = `<h3>قاعدة بيانات المسجد (جدول Google)</h3><p>${META.gs ? '<span class="pill ok">مربوطة</span> ' : ''}🔒 هذا القسم مقفل برمز تقني حتى لا يُغيَّر الربط بالخطأ.</p>
+   <div class="tools">${META.gs ? '<button class="btn" data-a="showPair">📱 رمز ربط جهاز معلم</button><button class="btn ghost" data-a="syncNow">زامن الآن</button>' : ''}<button class="btn ghost" data-a="techOpen">🔓 فتح بالرمز التقني</button></div>`;
+  if (restore) restore.hidden = true;
+}; V.settings.open = false; }
+{ const _go2 = go; go = function (v) { if (v != 'settings') V.settings.open = false; return _go2(v); }; }
+Object.assign(A5, {
+  techSet() { dlg.innerHTML = `<form class="dl" id="tf"><h2>🔒 رمز تقني</h2><p class="mut">يقفل قسم «جدول Google» واسترجاع النسخ الاحتياطية على كل أجهزة المسجد. يحفظه المسؤول التقني وحده.</p><label>الرمز (6 أحرف أو أرقام على الأقل)<input id="t1" type="password" minlength="6" required autocomplete="new-password"></label><label>أعده<input id="t2" type="password" minlength="6" required autocomplete="new-password"></label><div class="tools"><button class="btn" type="submit">اقفل</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></div></form>`; dlg.showModal();
+    $('#tf').onsubmit = async e => { e.preventDefault(); if ($('#t1').value != $('#t2').value) return toast('الرمزان غير متطابقين'); await emit('cfg', { tech: await hashPin($('#t1').value, 'tech') }); dlg.close(); V.settings.open = false; toast('قُفل القسم'); V.settings(); }; },
+  techOpen() { dlg.innerHTML = `<form class="dl" id="tf"><h2>🔓 الرمز التقني</h2><label>الرمز<input id="t1" type="password" required autocomplete="current-password"></label><div class="tools"><button class="btn" type="submit">افتح</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></div></form>`; dlg.showModal();
+    $('#tf').onsubmit = async e => { e.preventDefault(); if (await hashPin($('#t1').value, 'tech') != S.cfg.tech) { toast('الرمز غير صحيح'); return; } dlg.close(); V.settings.open = true; V.settings(); }; },
+  techLock() { V.settings.open = false; V.settings(); }
+});
