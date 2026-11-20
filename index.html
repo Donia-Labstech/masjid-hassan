@@ -72,6 +72,7 @@ p{margin:0}
 .pubnav a{font-size:14px;color:#2B2105;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:99px;padding:5px 14px;white-space:nowrap;text-decoration:none}
 .demobar{background:#F2A65A;color:#2B2105;text-align:center;font-size:13.5px;padding:6px 12px}
 .demobar a{color:#0E3B2E;font-weight:600;margin-inline-start:8px}
+.demobar .dbtn{font:inherit;font-size:13px;background:#fff8;border:1px solid #0E3B2E55;border-radius:99px;padding:1px 10px;margin:2px 4px;cursor:pointer;color:#0E3B2E}
 .back{margin-bottom:-6px}
 .mini{width:34px;height:34px;border-radius:50%;object-fit:cover;display:inline-grid;place-items:center;background:#EEE6D2;color:#8a7a55;font-family:var(--display);font-size:15px;vertical-align:middle;flex:none}
 .who2{display:inline-flex;gap:8px;align-items:center}
@@ -271,7 +272,7 @@ video.cam{width:min(100%,380px);border-radius:14px;border:2px solid var(--gold)}
   <div class="pubnav" id="pubnav" role="navigation" hidden aria-label="القائمة">
     <button data-v="home">🏠 الرئيسية</button><button data-v="join">📝 احجز مقعدًا</button><button data-v="blog">🌿 المدونة</button><button data-v="login">🔑 دخول الطاقم</button><button data-v="parent">👪 بوابة الأولياء</button><button data-v="feedback">💬 رأيكم يهمنا</button><button data-v="guide">📘 دليل الاستخدام</button><a href="?demo=1#dash">🎬 جولة تجريبية</a>
   </div>
-  <div class="demobar" id="demobar" hidden>🎬 نسخة تجريبية ببيانات وهمية للتعرّف على المنصة، لا تُحفظ في بيانات المسجد. رمز المدير 000000 · رمز المعلم 111111 · بوابة الأولياء: HN-0010 والرمز DEMO10 <a href="./">خروج من التجربة</a></div></header>
+  <div class="demobar" id="demobar" hidden>🎬 نسخة تجريبية ببيانات وهمية للتعرّف على المنصة، لا تُحفظ في بيانات المسجد. رمز المدير 000000 · رمز المعلم 111111 · بوابة الأولياء: HN-0010 والرمز DEMO10 <button class="dbtn" data-a="demoParent">👪 جرّب بوابة الأولياء كوليّ</button><button class="dbtn" data-a="demoAdmin">👤 عُد كمدير</button><button class="dbtn" data-v="guide">📘 الدليل</button><a href="./">خروج من التجربة</a></div></header>
 <div class="shell" id="shell">
   <nav id="nav" hidden></nav>
   <main id="main"></main>

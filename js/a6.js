@@ -88,6 +88,8 @@ V.guide = function () {
 };
 
 Object.assign(A5, {
+  demoParent() { if (!window.QS_DEMO) return; META.me = ''; persist(); V.parent.html = ''; go('parent'); $('#p-num').value = (CFG.prefix || 'Q') + '-0010'; $('#p-code').value = 'DEMO10'; toast('اضغط «دخول» لترى ما يراه الولي'); },
+  demoAdmin() { if (!window.QS_DEMO) return; META.me = 'demo-admin'; persist(); go('dash'); },
   copyPortal() { copy(portalURL(), 'نُسخ رابط البوابة'); },
   printSlips() { const h = $('#slips').innerHTML; if (!h) return toast('لا رموز بعد'); $('#print').innerHTML = '<div class="slips">' + h + '</div>'; window.print(); },
   poster() { $('#print').innerHTML = `<div class="poster"><img src="logo.webp" alt=""><h1>${esc(MOSQUE())}</h1><h2>👪 بوابة الأولياء</h2><p>تابعوا حضور أبنائكم وحفظهم وصلاة الفجر</p><div class="qr">${qrSvg(portalURL())}</div><p dir="ltr">${esc(portalURL())}</p><p>امسحوا الرمز بكاميرا الهاتف، وأدخلوا رقم التسجيل ورمز الولي المسلَّمين لكم.</p>${SUP ? `<p>للاستفسار: ${esc(SUP.name)} · <span dir="ltr">${esc(SUP.phone || '')}</span></p>` : ''}<small>وقف لله تعالى</small></div>`; window.print(); },
