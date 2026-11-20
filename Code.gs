@@ -2,6 +2,8 @@
    يُلصق هذا الملف في Apps Script داخل جدول المسجد، ثم يُنشر Web app.
    KEY: كلمة سر الأجهزة، تولّدها المنصة. لا تشاركها إلا مع أجهزة الطاقم. */
 var KEY = "ضع-هنا-كلمة-السر";
+/* اختياري: رقم الجدول (من رابطه بين /d/ و /edit) إن أُنشئ السكربت منفصلًا عن الجدول */
+var SHEET_ID = "";
 
 function doPost(e) {
   var d = {};
@@ -18,8 +20,12 @@ function doPost(e) {
 function doGet() { return out({ ok: true, service: "masjid" }); }
 
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+function book_() {
+  var a = null; try { a = SpreadsheetApp.getActiveSpreadsheet(); } catch (x) {}
+  return a || SpreadsheetApp.openById(SHEET_ID);
+}
 function sheet_(n, head) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet(), s = ss.getSheetByName(n);
+  var ss = book_(), s = ss.getSheetByName(n);
   if (!s) { s = ss.insertSheet(n); if (head) s.appendRow(head); }
   return s;
 }
