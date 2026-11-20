@@ -38,12 +38,50 @@ const idb = { db: null,
   get(k) { return new Promise((res, rej) => { const r = this.db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
   set(k, v) { return new Promise((res, rej) => { const t = this.db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); } };
 let EV = [], EVM = new Map(), META = { dev: uid(), seq: 0, unsent: [], gs: '', key: '', me: '' }, saveT;
-const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => { if (idb.db) { idb.set('events', EV).catch(() => {}); idb.set('meta', META).catch(() => {}); } }, 150); };
+const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => { if (idb.db) { idb.set('events', EV.map(bare)).catch(() => {}); idb.set('meta', META).catch(() => {}); } }, 150); };
+
+/* ---------- تشفير البيانات الحساسة (AES-256-GCM) ----------
+   هاتف الولي وتاريخ الميلاد واسم الأب والولي والبريد ورمز الولي وصورة الطالب تُشفَّر قبل الحفظ والإرسال،
+   فلا تظهر في جدول Google ولا في ملف السجل إلا مشفّرة. المفتاح عند أجهزة الطاقم وحدها (ينتقل مع رمز الربط). */
+const SENS = ['phone', 'birth', 'father', 'guardian', 'email', 'code', 'photo', 'addr'];
+const KR = {}; let KID = '';
+const bE = b => { b = new Uint8Array(b); let s = ''; for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode.apply(null, b.subarray(i, i + 8192)); return btoa(s); };
+const bD = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const hex = b => Array.from(new Uint8Array(b), x => x.toString(16).padStart(2, '0')).join('');
+const sha = async t => hex(await crypto.subtle.digest('SHA-256', typeof t == 'string' ? new TextEncoder().encode(t) : t));
+const chash = (num, code) => sha(String(num).toUpperCase() + ':' + String(code).toUpperCase());
+const bare = e => { if (!('_p' in e)) return e; const { _p, ...r } = e; return r; };
+async function keyAdd(b64) { const raw = bD(b64), kid = (await sha(raw)).slice(0, 8); if (!KR[kid]) KR[kid] = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']); return kid; }
+async function keysInit() {
+  if (!crypto.subtle) return;
+  if (!Array.isArray(META.dks) || !META.dks.length) META.dks = [bE(crypto.getRandomValues(new Uint8Array(32)))];
+  for (const k of META.dks) KID = await keyAdd(k); // آخر مفتاح هو المستعمل في التشفير
+}
+async function encEv(e) {
+  if (e.type != 'stu' || !KID || !e.d || e.d.enc) return e;
+  const p = {}; let n = 0; for (const f of SENS) if (f in e.d) { p[f] = e.d[f]; delete e.d[f]; n++; }
+  if (!n) return e;
+  if (p.code) e.d.ch = await chash(e.d.num, p.code);
+  const iv = crypto.getRandomValues(new Uint8Array(12)), c = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, KR[KID], new TextEncoder().encode(JSON.stringify(p)));
+  e.d.enc = { k: KID, iv: bE(iv), c: bE(c) }; e._p = p; return e;
+}
+async function decEv(e) {
+  const x = e.d && e.d.enc; if (!x || e._p) return;
+  try { e._p = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bD(x.iv) }, KR[x.k], bD(x.c)))); } catch (_) { e._p = null; }
+}
+async function decAll(list) { await Promise.all((list || EV).map(decEv)); }
+/* ترحيل: تشفير ما سُجّل قبل تفعيل التشفير */
+async function encMigrate() { let n = 0; for (const e of EV) if (e.type == 'stu' && e.d && !e.d.enc && SENS.some(f => f in e.d)) { await encEv(e); n++; } if (n) persist(); return n; }
+const pairCode = () => 'MQ2-' + b64e(JSON.stringify([META.gs, META.key, META.dks || []]));
+/* تشفير النسخة الاحتياطية بكلمة سر */
+async function passKey(pass, salt) { const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']); }
+async function lockBox(obj, pass) { const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)); const c = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await passKey(pass, salt), new TextEncoder().encode(JSON.stringify(obj))); return { v: 2, s: bE(salt), iv: bE(iv), c: bE(c) }; }
+async function openBox(b, pass) { const p = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bD(b.iv) }, await passKey(pass, bD(b.s)), bD(b.c)); return JSON.parse(new TextDecoder().decode(p)); }
 
 /* ---------- الحالة المشتقة من السجل ---------- */
 let S;
 function rebuild() {
-  S = { cfg: { cupDays: 40, ptsDay: 10, ptsCup: 100, lock: true, before: 15, commune: null, feeMode: 'f', fee: { m: 0, t: 0, y: 0 }, cur: 'دج' }, users: {}, groups: {}, stu: {}, att: {}, abs: {}, pay: {}, fajr: {}, rec: {}, kh: {}, reqs: {}, posts: [] };
+  S = { cfg: { cupDays: 40, ptsDay: 10, ptsCup: 100, lock: true, before: 15, commune: null, feeMode: 'f', fee: { m: 0, t: 0, y: 0 }, cur: 'دج' }, users: {}, groups: {}, stu: {}, att: {}, abs: {}, pay: {}, fajr: {}, rec: {}, kh: {}, reqs: {}, posts: [], exams: {}, res: {} };
   const evs = [...EV].sort((a, b) => a.ts - b.ts || (a.id < b.id ? -1 : 1));
   for (const e of evs) {
     const d = e.d || {};
@@ -51,7 +89,9 @@ function rebuild() {
       case 'cfg': Object.assign(S.cfg, d); break;
       case 'user': S.users[d.uid] = Object.assign(S.users[d.uid] || {}, d); break;
       case 'group': if (d.del) delete S.groups[d.gid]; else S.groups[d.gid] = Object.assign(S.groups[d.gid] || {}, d); break;
-      case 'stu': S.stu[d.num] = Object.assign(S.stu[d.num] || { ts: e.ts, p: 0, weak: [] }, d); break;
+      case 'stu': { const s = S.stu[d.num] = Object.assign(S.stu[d.num] || { ts: e.ts, p: 0, weak: [] }, d, e._p || {}); if (d.enc && !e._p) s.locked = 1; delete s.enc; break; }
+      case 'exam': if (d.del) delete S.exams[d.xid]; else S.exams[d.xid] = Object.assign(S.exams[d.xid] || { ts: e.ts }, d); break;
+      case 'res': { const r = S.res[d.xid] || (S.res[d.xid] = {}); if (d.x) delete r[d.num]; else r[d.num] = Object.assign({ ts: e.ts }, d); break; }
       case 'att': { const a = S.att[d.num] || (S.att[d.num] = new Set()); d.x ? a.delete(d.d) : a.add(d.d); break; }
       case 'abs': { const a = S.abs[d.num] || (S.abs[d.num] = new Map()); d.x ? a.delete(d.d) : a.set(d.d, d.why || ''); break; }
       case 'pay': { const a = S.pay[d.num] || (S.pay[d.num] = new Map()); d.x ? a.delete(d.k) : a.set(d.k, { amt: d.amt, ts: e.ts, id: e.id }); break; }
@@ -72,7 +112,7 @@ function rebuild() {
   }
 }
 async function emit(type, d) {
-  const e = { id: uid(), ts: Date.now(), dev: META.dev, by: META.me || '', type, d };
+  const e = await encEv({ id: uid(), ts: Date.now(), dev: META.dev, by: META.me || '', type, d: Object.assign({}, d) });
   EV.push(e); EVM.set(e.id, e); META.unsent.push(e.id); rebuild(); persist(); queueSync(1500); return e;
 }
 
@@ -92,7 +132,7 @@ async function sync() {
   if (window.QS_DEMO || !META.gs || !META.key || syncing) return; syncing = true;
   try {
     while (META.unsent.length) {
-      const ids = META.unsent.slice(0, 150), evs = ids.map(i => EVM.get(i)).filter(Boolean);
+      const ids = META.unsent.slice(0, 150), evs = ids.map(i => EVM.get(i)).filter(Boolean).map(bare);
       const j = await api(META.gs, { action: 'push', key: META.key, events: evs });
       if (!j.ok) throw new Error(j.err || 'push');
       META.unsent = META.unsent.filter(i => !ids.includes(i)); persist();
@@ -101,7 +141,7 @@ async function sync() {
     while (more) {
       const j = await api(META.gs, { action: 'pull', key: META.key, since: META.seq });
       if (!j.ok) throw new Error(j.err || 'pull');
-      for (const e of j.events) if (!EVM.has(e.id)) { EV.push(e); EVM.set(e.id, e); got++; }
+      for (const e of j.events) if (!EVM.has(e.id)) { await decEv(e); EV.push(e); EVM.set(e.id, e); got++; }
       META.seq = j.seq; more = j.more;
     }
     lastSync = Date.now(); persist(); syncBadge('on');

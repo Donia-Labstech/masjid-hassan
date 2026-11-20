@@ -2,7 +2,8 @@
 /* ---------- جولة تجريبية: قاعدة منفصلة ببيانات وهمية، لا تمسّ بيانات المسجد ولا تُزامَن ---------- */
 async function seedDemo() {
   const bar = $('#demobar'); if (bar) bar.hidden = false;
-  if (EV.length) return; // البيانات التجريبية موجودة من زيارة سابقة
+  if (EV.some(e => e.type == 'exam')) return; // البيانات التجريبية موجودة من زيارة سابقة
+  EV = []; // نسخة تجريبية قديمة: تُعاد بالبيانات الجديدة
   const t = today(), now = Date.now(), DAY = 864e5;
   let k = 0; const ev = (type, d, ago) => EV.push({ id: 'demo' + (k++), ts: now - (ago || 0) - 1e6 + k, dev: 'demo', by: '', type, d });
   const A = 'demo-admin', T1 = 'demo-t1', T2 = 'demo-t2';
@@ -33,5 +34,17 @@ async function seedDemo() {
   ev('rec', { num: num(9), k: 'r', gr: 3, i: 4 }, 3 * DAY); ev('rec', { num: num(9), k: 'r', gr: 3, i: 7 }, 2 * DAY);
   ev('kh', { num: num(9), k: 'sidq' }, 5 * DAY); ev('kh', { num: num(4), k: 'awn' }, 4 * DAY);
   ev('req', { rid: 'demo-r1', name: 'بلال', surname: 'بن يوسف', birth: '2016-05-02', father: 'يوسف', phone: '0550009999', guardian: 'الأب' }, DAY);
+  // الامتحانات: حضوري سابق بعلاماته، عن بعد مفتوح الآن لفوج الهدى، وحضوري قادم لكل الأفواج
+  const hhmm = ms => new Date(ms).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  ev('exam', { xid: 'demo-x1', t: 'امتحان الحزب الأول', kind: 'h', g: 'g1', d: addDays(t, -5), time: '17:00', room: 'القاعة 1', max: 20 }, 9 * DAY);
+  [16, 14.5, 12, 18].forEach((m, i) => ev('res', { xid: 'demo-x1', num: num(i), sc: m, total: 20, note: m >= 16 ? 'ممتاز' : '', by: 't' }, 5 * DAY));
+  ev('exam', { xid: 'demo-x2', t: 'مراجعة أحكام التجويد', kind: 'r', g: 'g3', d: t, time: hhmm(now - 10 * 60e3), m: 20, q: [
+    { q: 'ما حكم النون الساكنة إذا جاء بعدها حرف الباء؟', o: ['الإظهار', 'الإقلاب', 'الإدغام', 'الإخفاء'], a: 1 },
+    { q: 'كم عدد حروف الإظهار الحلقي؟', o: ['أربعة', 'خمسة', 'ستة', 'سبعة'], a: 2 },
+    { q: 'ما حكم الميم الساكنة إذا جاء بعدها ميم؟', o: ['إظهار شفوي', 'إخفاء شفوي', 'إدغام متماثلين صغير'], a: 2 },
+    { q: 'المدّ الطبيعي مقداره:', o: ['حركتان', 'أربع حركات', 'ست حركات'], a: 0 }] }, DAY);
+  ev('res', { xid: 'demo-x2', num: num(8), sc: 3, total: 4, blur: 0, wrong: [2], by: 'p' }, 3600e3);
+  ev('exam', { xid: 'demo-x3', t: 'امتحان نهاية الفصل', kind: 'h', g: '', d: addDays(t, 6), time: '09:00', room: 'قاعة الصلاة', max: 20 }, 2 * DAY);
+  ev('exam', { xid: 'demo-x4', t: 'اختبار الحفظ الأسبوعي', kind: 'r', g: 'g2', d: addDays(t, 3), time: '18:00', m: 15, q: [{ q: 'كم عدد أجزاء القرآن الكريم؟', o: ['30', '60', '114'], a: 0 }] }, DAY);
   EVM = new Map(EV.map(e => [e.id, e])); META.me = A; META.unsent = []; rebuild(); persist();
 }

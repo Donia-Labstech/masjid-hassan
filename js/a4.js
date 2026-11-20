@@ -86,7 +86,9 @@ const A = {
   printCards() { $('#print').innerHTML = '<div class="grid">' + $('#cardsGrid').innerHTML + '</div>'; window.print(); },
   printRank() { $('#print').innerHTML = `<h2>ترتيب جائزة رجال الفجر · ${esc(MOSQUE())} · ${fmtD(today())}</h2>` + $('#rank').innerHTML; window.print(); },
   csv() { download('students.csv', '﻿' + ['الرقم,الاسم,اللقب,تاريخ الميلاد,اسم الأب,الهاتف,الولي,البريد,الفوج,أيام الفجر,الكؤوس,النقاط'].concat(Object.values(S.stu).filter(s => !s.off).map(s => { const f = fajrStats(s.num); return [s.num, s.name, s.surname, s.birth, s.father, s.phone, s.guardian, s.email, gName(s.g), f.days, f.cups, f.pts].map(x => '"' + String(x ?? '').replace(/"/g, '""') + '"').join(','); })).join('\n'), 'text/csv'); },
-  backup() { download('masjid-backup-' + today() + '.json', JSON.stringify({ v: 1, events: EV }), 'application/json'); },
+  backup() { dlg.innerHTML = `<form class="dl" id="bkf"><h2>🔒 نسخة احتياطية مشفّرة</h2><p class="mut">اختر كلمة سر لقفل النسخة (8 أحرف على الأقل). لن تُفتح النسخة إلا بها، فاحفظها في مكان آمن.</p><label>كلمة السر<input id="bk1" type="password" minlength="8" required autocomplete="new-password"></label><label>أعدها<input id="bk2" type="password" minlength="8" required autocomplete="new-password"></label><div class="tools"><button class="btn" type="submit">نزّل النسخة</button><button class="btn ghost" type="button" data-a="close">إلغاء</button></div></form>`; dlg.showModal();
+    $('#bkf').onsubmit = async e => { e.preventDefault(); const p = $('#bk1').value; if (p != $('#bk2').value) return toast('كلمتا السر غير متطابقتين');
+      const box = await lockBox({ v: 2, events: EV.map(bare), dks: META.dks || [] }, p); download('masjid-backup-' + today() + '.json', JSON.stringify(box), 'application/json'); dlg.close(); toast('نُزّلت النسخة المشفّرة'); }; },
   gsGuide() { gsGuide(); },
   copyKey(el) { copy(el.dataset.k); },
   async gsLink(el) {
@@ -96,8 +98,8 @@ const A = {
     try { const j = await api(u, { action: 'ping', key }); if (!j.ok) throw 0; } catch (x) { el.disabled = false; el.textContent = 'اربط وأرسل البيانات'; return toast('لم يستجب السكربت. تحقق من كلمة السر في Code.gs ومن إعداد النشر'); }
     META.gs = u; META.key = key; META.seq = 0; META.unsent = EV.map(e => e.id); persist(); dlg.close(); toast('رُبطت القاعدة. جارٍ إرسال البيانات…'); await sync(); V.settings();
   },
-  copyPair() { copy('MQ1-' + b64e(JSON.stringify([META.gs, META.key])), 'نُسخ رمز الربط'); },
-  showPair() { dlg.innerHTML = `<div class="dl" style="align-items:center;text-align:center"><h2>رمز ربط جهاز جديد</h2><div style="width:240px;background:#fff;padding:10px;border-radius:12px">${qrSvg('MQ1-' + b64e(JSON.stringify([META.gs, META.key])))}</div><p class="mut">امسحه بكاميرا الهاتف الجديد ثم ألصق النص في «ربط هذا الجهاز». لا تعرضه لغير الطاقم.</p><button class="btn ghost" data-a="close">إغلاق</button></div>`; dlg.showModal(); },
+  copyPair() { copy(pairCode(), 'نُسخ رمز الربط'); },
+  showPair() { dlg.innerHTML = `<div class="dl" style="align-items:center;text-align:center"><h2>رمز ربط جهاز جديد</h2><div style="width:240px;background:#fff;padding:10px;border-radius:12px">${qrSvg(pairCode())}</div><p class="mut">امسحه بكاميرا الهاتف الجديد ثم ألصق النص في «ربط هذا الجهاز». لا تعرضه لغير الطاقم.</p><button class="btn ghost" data-a="close">إغلاق</button></div>`; dlg.showModal(); },
   syncNow() { sync().then(() => { toast(META.unsent.length ? 'لم تكتمل المزامنة' : 'تمت المزامنة'); V.settings(); }); }
 };
 Object.assign(A, A5);
@@ -127,8 +129,10 @@ async function boot() {
   intro();
   if ('serviceWorker' in navigator && location.protocol == 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
   try { await idb.open(); const [ev, me] = await Promise.all([idb.get('events'), idb.get('meta')]); if (Array.isArray(ev)) EV = ev; if (me) META = Object.assign(META, me); } catch (e) {}
+  try { await keysInit(); await decAll(); } catch (e) {}
   EVM = new Map(EV.map(e => [e.id, e])); rebuild();
   if (window.QS_DEMO) await seedDemo();
+  try { await encMigrate(); persist(); } catch (e) {} rebuild();
   if (META.me && !S.users[META.me]) META.me = '';
   go(location.hash.slice(1) || (META.me ? 'dash' : 'home'));
   if (META.gs) sync();

@@ -76,12 +76,14 @@ setup() {
 },
 pair() {
   main.innerHTML = `<form class="panel dl lock" id="pf"><h2>ربط هذا الجهاز</h2><p class="mut">ألصق «رمز الربط» الذي يظهر عند المدير في الإعدادات، ثم ادخل باسمك ورمزك.</p>
-  <textarea id="p-c" dir="ltr" required placeholder="MQ1-…" style="min-height:80px"></textarea><div class="tools"><button class="btn" type="submit">اربط</button><button class="btn ghost" type="button" data-v="login">رجوع</button></div></form>`;
-  $('#pf').onsubmit = async e => { e.preventDefault(); let d; try { d = JSON.parse(b64d($('#p-c').value.trim().replace(/^MQ1-/, ''))); } catch (x) {}
+  <textarea id="p-c" dir="ltr" required placeholder="MQ2-…" style="min-height:80px"></textarea><div class="tools"><button class="btn" type="submit">اربط</button><button class="btn ghost" type="button" data-v="login">رجوع</button></div></form>`;
+  $('#pf').onsubmit = async e => { e.preventDefault(); let d; try { d = JSON.parse(b64d($('#p-c').value.trim().replace(/^MQ[12]-/, ''))); } catch (x) {}
     if (!Array.isArray(d) || !/^https:\/\/script\.google\.com\//.test(d[0] || '')) return toast('رمز الربط غير صحيح');
     toast('جارٍ جلب بيانات المسجد…');
     try { const j = await api(d[0], { action: 'ping', key: d[1] }); if (!j.ok) throw 0; } catch (x) { return toast('تعذر الاتصال بقاعدة المسجد. تحقق من الرمز والإنترنت'); }
-    META.gs = d[0]; META.key = d[1]; META.seq = 0; persist(); await sync(); toast('رُبط الجهاز'); go('login'); };
+    META.gs = d[0]; META.key = d[1]; META.seq = 0;
+    if (Array.isArray(d[2]) && d[2].length) { META.dks = [...(META.dks || []).filter(k => !d[2].includes(k)), ...d[2]]; await keysInit(); }
+    persist(); await sync(); await decAll(); rebuild(); toast('رُبط الجهاز'); go('login'); };
 },
 
 /* ----- الطاقم ----- */
@@ -173,7 +175,7 @@ ai() {
   main.querySelectorAll('[data-q]').forEach(b => b.onclick = () => $('#ans').textContent = Q[b.dataset.q]());
 },
 settings() {
-  const me = ME(), adm = isAdmin(), c = S.cfg, code = META.gs ? 'MQ1-' + b64e(JSON.stringify([META.gs, META.key])) : '';
+  const me = ME(), adm = isAdmin(), c = S.cfg, code = META.gs ? pairCode() : '';
   main.innerHTML = head(adm ? 'الإعدادات' : 'حسابي', '') +
   `<div class="panel dl"><h3>حسابي</h3><p>${esc(me.name)} · ${adm ? 'المدير' : 'معلم'}</p><div class="tools"><button class="btn ghost" data-a="myPin">تغيير رمزي السري</button><button class="btn danger" data-a="logout">خروج من هذا الجهاز</button></div></div>` +
   (adm ? `<div class="panel dl"><h3>البلدية ووقت الفجر</h3><p class="mut">أوقات الصلاة تُحسب من إحداثيات البلدية بزاوية 18° للفجر. قد تختلف دقيقة أو دقيقتين عن رزنامة الوزارة.</p>
@@ -189,10 +191,15 @@ settings() {
   ${META.gs ? `<p><span class="pill ok">مربوطة</span> ${lastSync ? 'آخر مزامنة ' + new Date(lastSync).toLocaleTimeString('en-GB', { timeZone: TZ }) : ''}</p><p class="mut">لربط جهاز آخر (هاتف معلم أو هاتف الباب): افتح المنصة فيه، ثم «ربط هذا الجهاز»، وألصق هذا الرمز. لا تشاركه إلا مع الطاقم.</p>
   <div class="tools"><button class="btn" data-a="copyPair">انسخ رمز الربط</button><button class="btn ghost" data-a="showPair">اعرضه كرمز QR</button><button class="btn ghost" data-a="syncNow">زامن الآن</button></div>` :
   `<p class="mut">الآن تُحفظ البيانات في هذا الجهاز وحده. اربطها بجدول Google للمسجد لتظهر على كل الأجهزة.</p><div class="tools"><button class="btn gold" data-a="gsGuide">اربط بجدول Google</button></div>`}</div>
-  <div class="panel dl"><h3>نسخة احتياطية</h3><div class="tools"><button class="btn ghost" data-a="backup">نزّل نسخة احتياطية</button><label class="btn ghost">استرجاع نسخة<input type="file" id="imp" accept=".json,application/json" hidden></label></div></div>` : '');
+  <div class="panel dl"><h3>نسخة احتياطية مشفّرة</h3><p class="mut">تُقفل النسخة بكلمة سر تختارها، ولا تُفتح إلا بها. احفظ كلمة السر في مكان آمن: إن ضاعت لا يمكن فتح النسخة.</p><div class="tools"><button class="btn ghost" data-a="backup">نزّل نسخة احتياطية</button><label class="btn ghost">استرجاع نسخة<input type="file" id="imp" accept=".json,application/json" hidden></label></div></div>` : '');
   if (!adm) return;
   $('#fr').onchange = e => { const k = e.target.id.slice(2), v = e.target.value; emit('cfg', { [k]: k == 'lock' ? v == '1' : +v }).then(() => toast('حُفظ')); };
-  $('#imp').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { const d = JSON.parse(t); if (!Array.isArray(d.events)) throw 0; let n = 0; for (const x of d.events) if (!EVM.has(x.id)) { EV.push(x); EVM.set(x.id, x); META.unsent.push(x.id); n++; } rebuild(); persist(); queueSync(); toast('استُرجع ' + n + ' سجلًا'); V.settings(); }).catch(() => toast('الملف غير صالح')); };
+  $('#imp').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(async t => { let d = JSON.parse(t);
+    if (d.c && d.s) { const pw = prompt('كلمة سر النسخة الاحتياطية'); if (!pw) return; try { d = await openBox(d, pw); } catch (x) { return toast('كلمة السر غير صحيحة'); } }
+    if (!Array.isArray(d.events)) throw 0;
+    if (Array.isArray(d.dks)) { META.dks = [...d.dks.filter(k => !(META.dks || []).includes(k)), ...(META.dks || [])]; await keysInit(); }
+    let n = 0; for (const x of d.events) if (!EVM.has(x.id)) { await decEv(x); EV.push(x); EVM.set(x.id, x); META.unsent.push(x.id); n++; }
+    await encMigrate(); rebuild(); persist(); queueSync(); toast('استُرجع ' + n + ' سجلًا'); V.settings(); }).catch(() => toast('الملف غير صالح')); };
   geo();
 }
 };
