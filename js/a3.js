@@ -150,7 +150,7 @@ recite() {
 groups() {
   if (!isAdmin()) return go('dash');
   const T = Object.values(S.users).filter(u => u.role == 'teacher');
-  main.innerHTML = head('الأفواج والمعلمون', 'كل معلم يرى الأفواج المسندة إليه فقط', '<div class="tools"><button class="btn" data-a="newG">فوج جديد</button><button class="btn gold" data-a="newT">معلم جديد</button></div>') +
+  main.innerHTML = head('الأفواج والتوقيت', 'كل معلم يرى الأفواج المسندة إليه فقط، والجدول الأسبوعي أسفل الصفحة', '<div class="tools"><button class="btn" data-a="newG">فوج جديد</button><button class="btn gold" data-a="newT">معلم جديد</button></div>') +
   `<div class="grid g3">${Object.entries(S.groups).map(([id, g]) => `<div class="panel"><h3>${esc(g.n)}</h3><p class="mut">${esc(g.lvl || '')}</p><p>👤 ${esc((S.users[g.t] || {}).name || 'دون معلم')}</p><p>🗓 ${esc(daysLabel(g))}</p><p>⏰ ${esc(g.time || '')}${g.room ? ' · ' + esc(g.room) : ''}</p><p class="mut">${Object.values(S.stu).filter(s => !s.off && s.g == id).length} طالبًا</p><div class="tools"><button class="btn ghost sm" data-a="editG" data-g="${id}">تعديل</button></div></div>`).join('') || '<div class="panel mut">ابدأ بإنشاء أول فوج.</div>'}</div>
   <h3 class="sec">المعلمون</h3><div class="panel scroll"><table><tr><th>المعلم</th><th>الهاتف</th><th>أفواجه</th><th>الحالة</th><th></th></tr>${T.map(u => `<tr><td>${esc(u.name)}</td><td dir="ltr">${esc(u.phone || '')}</td><td>${Object.values(S.groups).filter(g => g.t == u.uid).map(g => esc(g.n)).join('، ') || '—'}</td><td>${u.off ? '<span class="pill bad">موقوف</span>' : '<span class="pill ok">نشط</span>'}</td><td><button class="btn ghost sm" data-a="editT" data-u="${u.uid}">تعديل</button></td></tr>`).join('') || '<tr><td>لا يوجد معلمون بعد</td></tr>'}</table></div>`;
 },
