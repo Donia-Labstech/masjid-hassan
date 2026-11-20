@@ -44,11 +44,12 @@ async function startCam() {
 }
 
 /* ---------- تسجيل الحضور والفجر ---------- */
-function attMark(num) {
-  const s = S.stu[num]; if (!s || s.off) return flash(false, 'رقم غير معروف: ' + esc(num));
+async function attMark(num, day) {
+  const s = S.stu[num], d = day || today(); if (!s || s.off) return flash(false, 'رقم غير معروف: ' + esc(num));
   if (!isAdmin() && !myGroups().includes(s.g)) return flash(false, esc(fullName(s)), 'ليس في أفواجك');
-  if (S.att[num] && S.att[num].has(today())) return flash(true, esc(fullName(s)), 'حضوره مسجّل من قبل');
-  emit('att', { num, d: today(), name: fullName(s), g: s.g }).then(() => { V.attend(); flash(true, '✔ ' + esc(fullName(s)), 'حاضر · ' + esc(gName(s.g))); });
+  if (S.att[num] && S.att[num].has(d)) return flash(true, esc(fullName(s)), 'حضوره مسجّل من قبل');
+  if (S.abs[num] && S.abs[num].has(d)) await emit('abs', { num, d, x: 1 });
+  await emit('att', { num, d, name: fullName(s), g: s.g }); V.attend(); flash(true, '✔ ' + esc(fullName(s)), 'حاضر · ' + esc(gName(s.g)));
 }
 function fajrMark(num, man, day) {
   const s = S.stu[num]; if (!s || s.off) return flash(false, 'رقم غير معروف: ' + esc(num));
@@ -75,16 +76,19 @@ const pos = s => s.p >= 480 ? 'خاتم' : 'الحزب ' + H(Math.floor(s.p / 8)
 function monthAbs(s) {
   const m = today().slice(0, 7), days = new Set();
   for (const o of Object.values(S.stu)) if (o.g == s.g && S.att[o.num]) for (const d of S.att[o.num]) if (d.startsWith(m)) days.add(d);
-  const mine = S.att[s.num] ? [...S.att[s.num]].filter(d => d.startsWith(m)).length : 0;
-  return { sessions: days.size, present: mine, absent: Math.max(0, days.size - mine) };
+  const pres = new Set(S.att[s.num] ? [...S.att[s.num]].filter(d => d.startsWith(m)) : []), ab = new Map();
+  for (const d of days) if (!pres.has(d)) ab.set(d, '');
+  if (S.abs[s.num]) for (const [d, w] of S.abs[s.num]) if (d.startsWith(m)) { ab.set(d, w); days.add(d); }
+  return { sessions: days.size, present: pres.size, absent: ab.size, excused: [...ab.values()].filter(Boolean).length, list: [...ab].sort((a, b) => a[0] < b[0] ? -1 : 1) };
 }
 function studentHTML(s) {
   const full = Math.floor(s.p / 8), st = fajrStats(s.num), ab = monthAbs(s), kh = S.kh[s.num] || {}, adm = isAdmin();
   let cells = ''; for (let i = 0; i < 60; i++) cells += `<span class="${i < full ? (s.weak.includes(i) ? 'w' : 'm') : (i == full && s.p % 8 ? 'p' : '')}">${H(i)}</span>`;
   const wa = s.phone ? `<a class="btn ghost sm" target="_blank" rel="noopener" href="https://wa.me/${waNum(s.phone)}">واتساب الولي</a>` : '';
   return `<div class="dl"><div class="head"><div class="tools">${photo(s, 1)}<div><h2>${esc(fullName(s))}</h2><p><span class="code">${esc(s.num)}</span> · ${esc(gName(s.g))}${s.birth ? ' · مواليد ' + esc(s.birth) : ''}<br>الأب: ${esc(s.father || '—')} · الولي: ${esc(s.guardian || '—')} · <span dir="ltr">${esc(s.phone || '')}</span></p></div></div><button class="btn ghost sm" data-a="close">إغلاق</button></div>
-  <div class="tools">${adm ? `<button class="btn sm" data-a="editS" data-n="${esc(s.num)}">تعديل البيانات</button><label class="btn ghost sm">صورة البطاقة<input type="file" accept="image/*" data-photo="${esc(s.num)}" hidden></label><button class="btn ghost sm" data-a="manFajr" data-n="${esc(s.num)}">تسجيل فجر يدويًا</button>` : ''}${wa}</div>
+  <div class="tools">${adm ? `<button class="btn sm" data-a="editS" data-n="${esc(s.num)}">تعديل البيانات</button><label class="btn ghost sm">صورة البطاقة<input type="file" accept="image/*" data-photo="${esc(s.num)}" hidden></label><button class="btn ghost sm" data-a="shoot1" data-n="${esc(s.num)}">📸 صوّره الآن</button><button class="btn ghost sm" data-a="manFajr" data-n="${esc(s.num)}">تسجيل فجر يدويًا</button>` : ''}${wa}${s.code && (adm || myGroups().includes(s.g)) ? `<button class="btn ghost sm" data-a="sendCode" data-n="${esc(s.num)}">👪 رمز الولي: <span class="code">${esc(s.code)}</span></button>` : ''}</div>
   <div class="grid g4"><div class="panel stat" style="--c:var(--gold)"><b>${st.cur}</b><span>أيام فجر متتالية</span></div><div class="panel stat" style="--c:var(--purple)"><b>${st.cups}</b><span>كؤوس رجال الفجر</span></div><div class="panel stat" style="--c:var(--emerald)"><b>${st.pts}</b><span>النقاط</span></div><div class="panel stat" style="--c:var(--red)"><b>${ab.absent}</b><span>غيابات هذا الشهر</span></div></div>
+  ${ab.list.length ? `<p class="mut" style="font-size:13px">غيابات ${MONTHS[+today().slice(5, 7) - 1]}: ${ab.list.map(([d, w]) => fmtD(d).replace(/ \d{4}$/, '') + (w ? ' (' + esc(w) + ')' : '')).join('، ')}</p>` : ''}
   <div><h3 style="margin-bottom:8px">خريطة الحفظ · ${esc(pos(s))}</h3><div class="board">${cells}</div></div>
   <div><h3 style="margin-bottom:8px">أوسمة الخُلق</h3><div class="tools">${KH.map(k => `<button class="btn ghost sm" style="border-color:${k[3]};color:inherit" data-a="kh" data-n="${esc(s.num)}" data-k="${k[0]}">${k[1]} ${k[2]} <b>${kh[k[0]] || 0}</b></button>`).join('')}</div></div>
   <div class="scroll"><table><tr><th>التاريخ</th><th>النوع</th><th>المقطع</th><th>التقدير</th></tr>${(S.rec[s.num] || []).slice(0, 8).map(r => `<tr><td>${fmtD(dstr(new Date(r.ts)))}</td><td>${r.k == 'n' ? 'حفظ جديد' : 'مراجعة'}</td><td>الحزب ${H(r.i)}${r.th ? ' · الثُّمن ' + r.th : ''}</td><td>${GRADES[r.gr]}</td></tr>`).join('') || '<tr><td>لا توجد حصص مسجلة بعد</td></tr>'}</table></div></div>`;
@@ -92,11 +96,13 @@ function studentHTML(s) {
 const openS = n => { dlg.innerHTML = studentHTML(S.stu[n]); dlg.showModal(); };
 
 /* ---------- نموذج التسجيل ---------- */
+const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), x => ALPHA[x % ALPHA.length]).join('');
 function nextNum() { const pre = (CFG.prefix || 'Q') + '-'; let m = 0; for (const k of Object.keys(S.stu)) if (k.startsWith(pre)) m = Math.max(m, +k.slice(pre.length) || 0); return pre + String(m + 1).padStart(4, '0'); }
 function stuForm(s, req) {
   s = s || req || {}; const gs = Object.keys(S.groups);
   return `<form class="dl" id="sf"><h2>${S.stu[s.num] ? 'تعديل بيانات الطالب' : 'تسجيل طالب'}</h2><div class="form">
-  <label>رقم التسجيل<input id="f-num" value="${esc(S.stu[s.num] ? s.num : nextNum())}" ${S.stu[s.num] ? 'readonly' : ''} required dir="ltr"></label>
+  <label>رقم التسجيل (يُعطى تلقائيًا)<input id="f-num" value="${esc(S.stu[s.num] ? s.num : nextNum())}" readonly required dir="ltr" class="code"></label>
   <label>الاسم<input id="f-name" value="${esc(s.name)}" required></label>
   <label>اللقب<input id="f-surname" value="${esc(s.surname)}" required></label>
   <label>تاريخ الميلاد<input id="f-birth" type="date" value="${esc(s.birth)}"></label>
@@ -112,11 +118,11 @@ function openForm(s, req) {
   dlg.innerHTML = stuForm(s, req); dlg.showModal();
   $('#sf').onsubmit = async e => {
     e.preventDefault(); const v = k => $('#f-' + k).value.trim(), num = v('num').toUpperCase();
-    if (!S.stu[s && s.num] && S.stu[num]) return toast('هذا الرقم مستعمل');
+    const isNew = !S.stu[s && s.num]; if (isNew && S.stu[num]) { $('#f-num').value = nextNum(); return toast('تغيّر الرقم لأن جهازًا آخر سجّل طالبًا للتو. اضغط حفظ مرة أخرى'); }
     const d = { num, name: v('name'), surname: v('surname'), birth: v('birth'), father: v('father'), phone: v('phone'), guardian: v('guardian'), email: v('email'), g: v('g'), hz0: Math.min(60, Math.max(0, +v('hz0') || 0)) };
-    if (!S.stu[num]) d.code = uid().slice(-6).toUpperCase();
+    if (!S.stu[num] || !S.stu[num].code) d.code = newCode();
     await emit('stu', d); if (req) await emit('reqdone', { rid: req.rid, st: 'ok' });
-    dlg.close(); toast('حُفظ الطالب ' + num); V[VIEW]();
+    if (isNew) welcome(S.stu[num]); else { dlg.close(); toast('حُفظ ' + num); } V[VIEW]();
   };
 }
 
@@ -151,8 +157,12 @@ const POSTS = [
   'قال النبي ﷺ: «خيركم من تعلّم القرآن وعلّمه» رواه البخاري.',
   'إذا حفظت آية فعلّمها أخاك الصغير، فأنت بذلك معلّم ومتعلّم معًا.']]
 ];
+const postBody = p => p.map(x => `<p>${esc(x).replace(/\ufd3f[^\ufd3e]+\ufd3e/g, m => `<span class="q">${m}</span>`)}</p>`).join('');
 function postsHTML() {
+  const W = typeof weeklyPosts == 'function' ? weeklyPosts() : [];
   const extra = S.posts.map(p => [p.cat || 'من المسجد', p.title, String(p.body || '').split('\n').filter(Boolean), p.pid]);
-  return [...extra, ...POSTS].map((p, i) => `<details class="post"${i ? '' : ' open'}><summary><span class="cat">${esc(p[0])}</span><h3>${esc(p[1])}</h3></summary><div class="body">${p[2].map(x => `<p>${esc(x).replace(/﴿[^﴾]+﴾/g, m => `<span class="q">${m}</span>`)}</p>`).join('')}${p[3] && isAdmin() ? `<div><button class="btn danger sm" data-a="delPost" data-p="${esc(p[3])}">حذف</button></div>` : ''}</div></details>`).join('');
+  const wk = W.map((p, i) => `<details class="post"${i ? '' : ' open'}><summary><span class="cat">${i ? '' : '🆕 '}منشور ${p.day} ${fmtD(p.d)} · ${esc(p.cat)}</span><h3>${esc(p.title)}</h3></summary><div class="body">${postBody(p.body)}</div></details>`).join('');
+  const rest = [...extra, ...POSTS].map(p => `<details class="post"><summary><span class="cat">${esc(p[0])}</span><h3>${esc(p[1])}</h3></summary><div class="body">${postBody(p[2])}${p[3] && isAdmin() ? `<div><button class="btn danger sm" data-a="delPost" data-p="${esc(p[3])}">حذف</button></div>` : ''}</div></details>`).join('');
+  return (wk ? `<h3 class="sec" style="margin-bottom:6px">منشورات الاثنين والجمعة</h3>${wk}` : '') + `<h3 class="sec" style="margin:18px 0 6px">مقالات ثابتة</h3>` + rest;
 }
 

@@ -73,6 +73,23 @@ p{margin:0}
 .demobar{background:#F2A65A;color:#2B2105;text-align:center;font-size:13.5px;padding:6px 12px}
 .demobar a{color:#0E3B2E;font-weight:600;margin-inline-start:8px}
 .back{margin-bottom:-6px}
+.mini{width:34px;height:34px;border-radius:50%;object-fit:cover;display:inline-grid;place-items:center;background:#EEE6D2;color:#8a7a55;font-family:var(--display);font-size:15px;vertical-align:middle;flex:none}
+.who2{display:inline-flex;gap:8px;align-items:center}
+.nowrap{white-space:nowrap}
+.podium .ph{width:64px;height:80px;margin:4px auto;border:2px solid #fff;box-shadow:0 2px 8px #0003}
+.sched td{vertical-align:top}.sched .slot{display:block;background:color-mix(in srgb,var(--emerald) 12%,transparent);border-radius:8px;padding:2px 8px;margin:2px 0;font-weight:500}.sched .slot small{color:var(--muted);font-weight:400}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px}.checks label{display:inline-flex;gap:5px;align-items:center;color:var(--ink);font-size:14px}
+.inl{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.att3 table td{padding:6px 6px}
+.weekly{border-inline-start:5px solid var(--teal)}.weekly .cat{font-size:12.5px;color:var(--gold)}.weekly .body{margin:6px 0 10px}.weekly .q{font-family:var(--quran);color:var(--emerald)}
+.shoot{gap:10px}.shootbox{position:relative;width:min(100%,340px);aspect-ratio:4/5;margin:auto;background:#000;border-radius:16px;overflow:hidden}
+.shootbox video{width:100%;height:100%;object-fit:cover}.shootbox video.mirror{transform:scaleX(-1)}
+.shootbox .sframe{position:absolute;inset:8% 14% 14%;border:3px dashed #E8C468;border-radius:46% 46% 40% 40%;pointer-events:none}
+.shootbox #sh-err{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#fff;background:#000c}
+.shwho{display:flex;gap:12px;align-items:center;justify-content:center}.shwho small{display:block;color:var(--muted);font-size:12.5px}
+.receipt{border:2px solid var(--gold);border-radius:14px;padding:18px;text-align:center;background:#fff;color:#10291F}.receipt img{border-radius:50%}
+.receipt dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:start;margin:14px 0}.receipt dt{color:#5E7468}.receipt dd{margin:0;font-weight:600}
+.lockw{max-width:560px}.pcard h2{font-size:24px}
 .sync{font-size:12px;padding:2px 10px;border-radius:99px;border:1px solid #fff4;white-space:nowrap}
 .sync.on{background:#22865A55} .sync.off{background:#B5402F66}
 .shell{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px}
@@ -241,9 +258,9 @@ video.cam{width:min(100%,380px);border-radius:14px;border:2px solid var(--gold)}
   <button class="btn sm gold" id="inst" hidden>ثبّت التطبيق</button>
 </div>
   <div class="pubnav" id="pubnav" role="navigation" hidden aria-label="القائمة">
-    <button data-v="home">🏠 الرئيسية</button><button data-v="join">📝 احجز مقعدًا</button><button data-v="blog">🌿 المدونة</button><button data-v="login">🔑 دخول الطاقم</button><a href="?demo=1#dash">🎬 جولة تجريبية</a>
+    <button data-v="home">🏠 الرئيسية</button><button data-v="join">📝 احجز مقعدًا</button><button data-v="blog">🌿 المدونة</button><button data-v="login">🔑 دخول الطاقم</button><button data-v="parent">👪 بوابة الأولياء</button><button data-v="feedback">💬 رأيكم يهمنا</button><a href="?demo=1#dash">🎬 جولة تجريبية</a>
   </div>
-  <div class="demobar" id="demobar" hidden>🎬 نسخة تجريبية ببيانات وهمية للتعرّف على المنصة، لا تُحفظ في بيانات المسجد. رمز المدير 000000 · رمز المعلم 111111 <a href="./">خروج من التجربة</a></div></header>
+  <div class="demobar" id="demobar" hidden>🎬 نسخة تجريبية ببيانات وهمية للتعرّف على المنصة، لا تُحفظ في بيانات المسجد. رمز المدير 000000 · رمز المعلم 111111 · بوابة الأولياء: HN-0010 والرمز DEMO10 <a href="./">خروج من التجربة</a></div></header>
 <div class="shell" id="shell">
   <nav id="nav" hidden></nav>
   <main id="main"></main>
@@ -258,7 +275,10 @@ video.cam{width:min(100%,380px);border-radius:14px;border:2px solid var(--gold)}
 <script src="js/a1.js"></script>
 <script src="js/a2.js"></script>
 <script src="js/a3.js"></script>
+<script src="js/posts.js"></script>
+<script src="js/a5.js"></script>
 <script src="js/demo.js"></script>
 <script src="js/a4.js"></script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

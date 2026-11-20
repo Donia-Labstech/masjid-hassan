@@ -100,6 +100,7 @@ const A = {
   showPair() { dlg.innerHTML = `<div class="dl" style="align-items:center;text-align:center"><h2>رمز ربط جهاز جديد</h2><div style="width:240px;background:#fff;padding:10px;border-radius:12px">${qrSvg('MQ1-' + b64e(JSON.stringify([META.gs, META.key])))}</div><p class="mut">امسحه بكاميرا الهاتف الجديد ثم ألصق النص في «ربط هذا الجهاز». لا تعرضه لغير الطاقم.</p><button class="btn ghost" data-a="close">إغلاق</button></div>`; dlg.showModal(); },
   syncNow() { sync().then(() => { toast(META.unsent.length ? 'لم تكتمل المزامنة' : 'تمت المزامنة'); V.settings(); }); }
 };
+Object.assign(A, A5);
 document.addEventListener('click', e => {
   const d = e.target.closest('[data-a],[data-v],[data-s]'); if (!d) return;
   if (d.dataset.a && A[d.dataset.a]) return A[d.dataset.a](d);

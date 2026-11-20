@@ -7,6 +7,7 @@ function doPost(e) {
   var d = {};
   try { d = JSON.parse(e.postData.contents); } catch (x) { return out({ ok: false, err: "bad" }); }
   if (d.action === "request") return request_(d.data || {});
+  if (d.action === "parent") return parent_(String(d.num || "").toUpperCase(), String(d.code || "").toUpperCase());
   if (d.action === "ping" && d.key === KEY) return out({ ok: true });
   if (d.key !== KEY) return out({ ok: false, err: "denied" });
   if (d.action === "push") return push_(d.events || []);
@@ -62,6 +63,25 @@ function request_(f) {
       .appendRow([new Date(), d.name, d.surname, d.birth, d.father, d.phone, d.guardian, d.email]);
     return out({ ok: true });
   } finally { lock.releaseLock(); }
+}
+
+/* بوابة الأولياء: يعيد سجلّ طالب واحد فقط إذا طابق رقمُ التسجيل رمزَ الولي */
+function parent_(num, code) {
+  if (!num || code.length < 6) return out({ ok: false, err: "denied" });
+  var s = log_(), last = s.getLastRow(); if (last < 2) return out({ ok: false, err: "denied" });
+  var vals = s.getRange(2, 1, last - 1, 7).getValues(), evs = [], real = "", own = { stu: 1, att: 1, abs: 1, fajr: 1, rec: 1, kh: 1 };
+  vals.forEach(function (r) {
+    var t = String(r[5]), d = {};
+    if (t !== "cfg" && t !== "group" && !own[t]) return;
+    try { d = JSON.parse(r[6]); } catch (x) { return; }
+    if (t === "cfg") { evs.push({ id: String(r[1]), ts: r[2], type: t, d: { cupDays: d.cupDays, ptsDay: d.ptsDay, ptsCup: d.ptsCup } }); return; }
+    if (t === "group") { evs.push({ id: String(r[1]), ts: r[2], type: t, d: { gid: d.gid, n: d.n, time: d.time, room: d.room, wd: d.wd, days: d.days, del: d.del } }); return; }
+    if (String(d.num).toUpperCase() !== num) return;
+    if (t === "stu" && d.code) real = String(d.code).toUpperCase();
+    evs.push({ id: String(r[1]), ts: r[2], type: t, d: d });
+  });
+  if (!real || real !== code) { Utilities.sleep(800); return out({ ok: false, err: "denied" }); }
+  return out({ ok: true, events: evs });
 }
 
 /* نسخ مقروءة للمسجد: الطلاب، الحضور، رجال الفجر */

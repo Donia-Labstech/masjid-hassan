@@ -43,7 +43,7 @@ const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => { if (idb.
 /* ---------- الحالة المشتقة من السجل ---------- */
 let S;
 function rebuild() {
-  S = { cfg: { cupDays: 40, ptsDay: 10, ptsCup: 100, lock: true, before: 15, commune: null }, users: {}, groups: {}, stu: {}, att: {}, fajr: {}, rec: {}, kh: {}, reqs: {}, posts: [] };
+  S = { cfg: { cupDays: 40, ptsDay: 10, ptsCup: 100, lock: true, before: 15, commune: null, feeMode: 'f', fee: { m: 0, t: 0, y: 0 }, cur: 'دج' }, users: {}, groups: {}, stu: {}, att: {}, abs: {}, pay: {}, fajr: {}, rec: {}, kh: {}, reqs: {}, posts: [] };
   const evs = [...EV].sort((a, b) => a.ts - b.ts || (a.id < b.id ? -1 : 1));
   for (const e of evs) {
     const d = e.d || {};
@@ -53,6 +53,8 @@ function rebuild() {
       case 'group': if (d.del) delete S.groups[d.gid]; else S.groups[d.gid] = Object.assign(S.groups[d.gid] || {}, d); break;
       case 'stu': S.stu[d.num] = Object.assign(S.stu[d.num] || { ts: e.ts, p: 0, weak: [] }, d); break;
       case 'att': { const a = S.att[d.num] || (S.att[d.num] = new Set()); d.x ? a.delete(d.d) : a.add(d.d); break; }
+      case 'abs': { const a = S.abs[d.num] || (S.abs[d.num] = new Map()); d.x ? a.delete(d.d) : a.set(d.d, d.why || ''); break; }
+      case 'pay': { const a = S.pay[d.num] || (S.pay[d.num] = new Map()); d.x ? a.delete(d.k) : a.set(d.k, { amt: d.amt, ts: e.ts, id: e.id }); break; }
       case 'fajr': { const a = S.fajr[d.num] || (S.fajr[d.num] = new Map()); d.x ? a.delete(d.d) : a.set(d.d, { t: d.t, man: d.man }); break; }
       case 'rec': (S.rec[d.num] || (S.rec[d.num] = [])).unshift({ ts: e.ts, k: d.k, gr: d.gr, i: d.i, th: d.th }); break;
       case 'kh': { const k = S.kh[d.num] || (S.kh[d.num] = {}); k[d.k] = (k[d.k] || 0) + 1; break; }
