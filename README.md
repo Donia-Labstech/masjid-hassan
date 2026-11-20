@@ -1,5 +1,7 @@
 # قالب منصة المسجد (وقف لله تعالى)
 
+> النشر تلقائي: كل تعديل يُرفع إلى الفرع main يُنشر على https://masjid-hassan.vercel.app
+
 النسخة الأولى: **مسجد حسان بن النعمان · المعاضيد · ولاية المسيلة**
 الرابط: https://masjid-hassan.vercel.app
 مشروع Vercel: `masjid-hassan` (prj_iU9koExa9LGSUHzlIMtzViOJD1Ua) · آخر نشر: dpl_FYzXLQHfFJYP2ZFfDLVtqmrV65Tp (2026-11-20)
