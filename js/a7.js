@@ -263,3 +263,25 @@ Object.assign(A5, {
     $('#tf').onsubmit = async e => { e.preventDefault(); if (await hashPin($('#t1').value, 'tech') != S.cfg.tech) { toast('الرمز غير صحيح'); return; } dlg.close(); V.settings.open = true; V.settings(); }; },
   techLock() { V.settings.open = false; V.settings(); }
 });
+
+/* ---------- ملصق التسجيل عبر الإنترنت (QR) لمدخل المسجد ---------- */
+const joinURL = () => location.origin + location.pathname + '#join';
+const joinPanel = () => `<div class="panel joinqr"><div class="qrbox">${qrSvg(joinURL())}</div><div class="dl" style="flex:1;min-width:220px"><h3>📌 ملصق التسجيل عند مدخل ${esc(THE())}</h3>
+  <p class="mut">يمسح الولي الرمز بكاميرا هاتفه، فيفتح نموذج «احجز مقعدًا»، وتصل الطلبات إلى هذه الصفحة${CFG.gs || META.gs ? '' : ' (أو إلى واتساب المشرف قبل ربط جدول Google)'}.</p>
+  <p class="code" dir="ltr" style="font-size:13px;word-break:break-all">${esc(joinURL())}</p>
+  <div class="tools"><button class="btn gold" data-a="joinPoster">🖨 اطبع الملصق</button><button class="btn ghost" data-a="joinCopy">انسخ الرابط</button><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent('📝 التسجيل في حلقات القرآن بـ' + MOSQUE() + '\n' + joinURL())}">📲 شارك بواتساب</a></div></div></div>`;
+{ const _r = V.reqs; V.reqs = function () { _r(); const h = main.querySelector('.head'); if (h) h.insertAdjacentHTML('afterend', joinPanel()); }; }
+{ const _p = V.portal; if (_p) V.portal = function () { _p(); const h = main.querySelector('.head'); if (h) h.insertAdjacentHTML('afterend', joinPanel()); }; }
+Object.assign(A5, {
+  joinCopy() { copy(joinURL(), 'نُسخ رابط التسجيل'); },
+  joinPoster() {
+    $('#print').innerHTML = `<div class="poster jp"><img src="logo.webp" alt=""><h1>${esc(MOSQUE())}</h1><p>${esc(CFG.place || '')}</p>
+    <h2>📝 سجّلوا أبناءكم في حلقات القرآن الكريم</h2><p class="q">«خيركم من تعلّم القرآن وعلّمه»</p>
+    <div class="qr">${qrSvg(joinURL())}</div>
+    <ol><li>امسحوا الرمز بكاميرا الهاتف</li><li>املؤوا استمارة التسجيل</li><li>تتصل بكم إدارة ${esc(THE())} لتأكيد التسجيل</li></ol>
+    <p dir="ltr" style="font-size:15px">${esc(joinURL())}</p>
+    ${CFG.supervisor ? `<p>للاستفسار: ${esc(CFG.supervisor.name)} · <span dir="ltr">${esc(CFG.supervisor.phone || '')}</span></p>` : ''}<small>وقف لله تعالى</small></div>`;
+    window.print();
+  }
+});
+{ const g = GUIDE.find(x => x[1] == 'الحقوق وطلبات التسجيل'); if (g) g[2].push('ملصق التسجيل: من «طلبات التسجيل» (أو «بوابة الأولياء») اضغط «🖨 اطبع الملصق» وعلّقه عند مدخل المسجد. يمسح الولي رمز QR فيفتح نموذج الحجز من هاتفه، وتصل الطلبات إلى المنصة.'); }
